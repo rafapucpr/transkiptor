@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Backend API service (Production)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: transkiptor-backend-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      - /tmp/transkiptor:/tmp/transkiptor  # For temporary files
+      - ./logs:/app/logs  # Persistent logs
+    environment:
+      - PYTHONPATH=/app
+      - ENV=production
+    restart: always
+    networks:
+      - transkiptor-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+  # Frontend web service (Production)
+  frontend:
+    build: ./frontend
+    container_name: transkiptor-frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - transkiptor-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+volumes:
+  transkiptor_data:
+  transkiptor_logs:
+
+networks:
+  transkiptor-network:
+    driver: bridge

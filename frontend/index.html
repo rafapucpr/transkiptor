@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transkiptor - Interface de Teste</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Transkiptor</h1>
+            <p>Interface de teste para transcrição de vídeos do YouTube</p>
+        </header>
+
+        <main>
+            <div class="form-container">
+                <form id="transcriptionForm">
+                    <div class="input-group">
+                        <label for="videoUrl">URL do Vídeo do YouTube:</label>
+                        <input 
+                            type="url" 
+                            id="videoUrl" 
+                            name="videoUrl" 
+                            placeholder="https://www.youtube.com/watch?v=..." 
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="language">Idioma (opcional):</label>
+                        <select id="language" name="language">
+                            <option value="auto">Detecção automática</option>
+                            <option value="pt" selected>Português</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="downloadVideoBtn" class="btn-primary" style="margin-bottom: 10px;">
+                        <span class="btn-text">📺 Baixar Vídeo</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span>
+                            Baixando...
+                        </span>
+                    </button>
+                    
+                    <button type="submit" id="transcribeBtn" class="btn-primary">
+                        <span class="btn-text">Baixar Transcrição</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span>
+                            Processando...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="status-container">
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+                <div id="progressBar" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="result-container" id="resultContainer" style="display: none;">
+                <h3>Resultado da Transcrição</h3>
+                <div class="result-info">
+                    <span id="videoDuration"></span>
+                    <span id="detectedLanguage"></span>
+                </div>
+                <textarea id="transcriptionText" readonly></textarea>
+                <div class="result-actions">
+                    <button id="downloadBtn" class="btn-secondary">
+                        📥 Baixar como TXT
+                    </button>
+                    <button id="copyBtn" class="btn-secondary">
+                        📋 Copiar Texto
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by <strong>yt-dlp</strong> + <strong>whisper.cpp</strong></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
