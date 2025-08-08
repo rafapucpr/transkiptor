@@ -40,9 +40,9 @@ class VideoDownloadService:
         temp_dir = tempfile.mkdtemp()
         output_template = os.path.join(temp_dir, "%(title)s.%(ext)s")
         
-        # Configure for best quality video + audio (prioritize 1080p)
+        # Configure for best quality video + audio (prioritize 1080p but allow higher)
         ydl_opts = {
-            'format': 'bestvideo[height<=1080]+bestaudio[ext=m4a]/best[height<=1080]/best',
+            'format': 'bestvideo[height>=1080]+bestaudio/bestvideo+bestaudio/best',
             'outtmpl': output_template,
             'merge_output_format': 'mp4',
             'writeinfojson': False,
