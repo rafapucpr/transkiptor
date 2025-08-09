@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from routes.transcription import router as transcription_router
 from routes.download import router as download_router
+from routes.audio_transcription import router as audio_transcription_router
 import logging
 
 # Configure logging
@@ -38,6 +39,7 @@ app.add_middleware(
 
 app.include_router(transcription_router, prefix="/api/v1", tags=["transcription"])
 app.include_router(download_router, prefix="/api/v1", tags=["download"])
+app.include_router(audio_transcription_router, prefix="/api/v1", tags=["audio-transcription"])
 
 
 @app.get("/")

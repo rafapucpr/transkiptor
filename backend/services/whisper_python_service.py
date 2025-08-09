@@ -1,7 +1,7 @@
 import os
 import subprocess
 import logging
-from typing import Tuple
+from typing import Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,63 @@ class WhisperPythonService:
             
         except Exception as e:
             logger.error(f"❌ Erro na transcrição: {e}")
+            raise Exception(f"Erro na transcrição com OpenAI Whisper: {str(e)}")
+    
+    async def transcribe_audio_with_timestamps(self, audio_file: str, language: str = "auto") -> Tuple[str, str, list]:
+        """Transcribe audio with timestamps using OpenAI Whisper Python library."""
+        if not self.whisper_available:
+            try:
+                import whisper
+                self.whisper_available = True
+            except ImportError:
+                raise Exception("OpenAI Whisper não está instalado. Execute: pip install openai-whisper")
+        
+        try:
+            import whisper
+            
+            # Ensure local FFmpeg is in PATH if available
+            self._ensure_ffmpeg_in_path()
+            
+            logger.info(f"🤖 Carregando modelo Whisper para transcrição com timestamps...")
+            
+            # Use o modelo base para um bom equilíbrio entre velocidade e qualidade
+            model = whisper.load_model("base")
+            
+            # Configurar idioma
+            language_param = None if language == "auto" else language
+            
+            logger.info(f"🎤 Transcrevendo áudio com timestamps: {os.path.basename(audio_file)}")
+            
+            # Transcrever com word_timestamps ativado
+            result = model.transcribe(
+                audio_file,
+                language=language_param,
+                verbose=False,
+                word_timestamps=True
+            )
+            
+            transcription = result["text"].strip()
+            detected_language = result.get("language", language)
+            
+            # Extrair segmentos com timestamps
+            segments = []
+            if "segments" in result:
+                for segment in result["segments"]:
+                    text = segment.get("text", "").strip()
+                    if text:
+                        segments.append({
+                            'start': segment.get('start', 0),
+                            'end': segment.get('end', 0),
+                            'text': text
+                        })
+            
+            logger.info(f"✅ Transcrição com timestamps concluída. Idioma detectado: {detected_language}")
+            logger.info(f"📝 Preview: {transcription[:100]}...")
+            
+            return transcription, detected_language, segments
+            
+        except Exception as e:
+            logger.error(f"❌ Erro na transcrição com timestamps: {e}")
             raise Exception(f"Erro na transcrição com OpenAI Whisper: {str(e)}")
     
     def _ensure_ffmpeg_in_path(self):

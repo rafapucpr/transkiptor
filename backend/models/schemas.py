@@ -18,6 +18,20 @@ class TranscriptionResponse(BaseModel):
     success: bool
 
 
+class AudioTranscriptionRequest(BaseModel):
+    language: Optional[str] = "auto"
+    output_format: str = "txt"  # txt or srt
+
+
+class AudioTranscriptionResponse(BaseModel):
+    transcription: str
+    duration: float
+    language: str
+    success: bool
+    output_format: str
+    filename: Optional[str] = None
+
+
 class ErrorResponse(BaseModel):
     error: str
     success: bool = False

@@ -16,10 +16,25 @@ class TranskiptorUI {
         this.downloadBtn = document.getElementById('downloadBtn');
         this.copyBtn = document.getElementById('copyBtn');
 
+        // Audio upload elements
+        this.audioForm = document.getElementById('audioTranscriptionForm');
+        this.fileUploadArea = document.getElementById('fileUploadArea');
+        this.audioFile = document.getElementById('audioFile');
+        this.fileInfo = document.getElementById('fileInfo');
+        this.fileName = document.getElementById('fileName');
+        this.fileSize = document.getElementById('fileSize');
+        this.transcribeAudioBtn = document.getElementById('transcribeAudioBtn');
+        this.outputFormat = document.getElementById('outputFormat');
+        this.audioStatusMessage = document.getElementById('audioStatusMessage');
+        this.audioProgressBar = document.getElementById('audioProgressBar');
+
+        this.selectedFile = null;
+
         this.initEventListeners();
     }
 
     initEventListeners() {
+        // YouTube transcription events
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleTranscription();
@@ -35,6 +50,40 @@ class TranskiptorUI {
 
         this.copyBtn.addEventListener('click', () => {
             this.copyTranscription();
+        });
+
+        // Audio upload events
+        this.audioForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAudioTranscription();
+        });
+
+        this.fileUploadArea.addEventListener('click', () => {
+            this.audioFile.click();
+        });
+
+        this.fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this.fileUploadArea.classList.add('dragover');
+        });
+
+        this.fileUploadArea.addEventListener('dragleave', () => {
+            this.fileUploadArea.classList.remove('dragover');
+        });
+
+        this.fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.fileUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFileSelection(files[0]);
+            }
+        });
+
+        this.audioFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileSelection(e.target.files[0]);
+            }
         });
     }
 
@@ -280,6 +329,165 @@ class TranskiptorUI {
         } finally {
             this.setVideoLoading(false);
             this.hideProgress();
+        }
+    }
+
+    // Audio upload methods
+    showAudioStatus(message, type = 'info') {
+        this.audioStatusMessage.textContent = message;
+        this.audioStatusMessage.className = `status-message ${type}`;
+        this.audioStatusMessage.style.display = 'block';
+    }
+
+    hideAudioStatus() {
+        this.audioStatusMessage.style.display = 'none';
+    }
+
+    showAudioProgress() {
+        this.audioProgressBar.style.display = 'block';
+    }
+
+    hideAudioProgress() {
+        this.audioProgressBar.style.display = 'none';
+    }
+
+    setAudioLoading(loading) {
+        const btnText = this.transcribeAudioBtn.querySelector('.btn-text');
+        const btnLoading = this.transcribeAudioBtn.querySelector('.btn-loading');
+        
+        if (loading) {
+            this.transcribeAudioBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'flex';
+        } else {
+            this.transcribeAudioBtn.disabled = this.selectedFile ? false : true;
+            btnText.style.display = 'block';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    validateAudioFile(file) {
+        const allowedTypes = [
+            'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/m4a', 
+            'audio/ogg', 'audio/webm', 'audio/flac', 'audio/x-flac',
+            'audio/aac', 'video/mp4', 'video/quicktime', 'video/x-msvideo'
+        ];
+        
+        const allowedExtensions = ['.wav', '.mp3', '.m4a', '.ogg', '.webm', '.flac', '.aac', '.mp4', '.mov', '.avi'];
+        const fileExtension = file.name.toLowerCase().substr(file.name.lastIndexOf('.'));
+        
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+            return { valid: false, error: 'Formato de arquivo não suportado' };
+        }
+        
+        if (file.size > maxSize) {
+            return { valid: false, error: 'Arquivo muito grande (máximo 100MB)' };
+        }
+        
+        return { valid: true };
+    }
+
+    handleFileSelection(file) {
+        const validation = this.validateAudioFile(file);
+        
+        if (!validation.valid) {
+            this.showAudioStatus(validation.error, 'error');
+            return;
+        }
+        
+        this.selectedFile = file;
+        
+        // Update UI
+        this.fileUploadArea.classList.add('file-selected');
+        this.fileUploadArea.querySelector('.file-upload-icon').textContent = '✓';
+        this.fileUploadArea.querySelector('.file-upload-text').textContent = 'Arquivo selecionado';
+        this.fileUploadArea.querySelector('.file-upload-hint').textContent = 'Clique novamente para selecionar outro arquivo';
+        
+        // Show file info
+        this.fileName.textContent = file.name;
+        this.fileSize.textContent = this.formatFileSize(file.size);
+        this.fileInfo.style.display = 'block';
+        
+        // Enable transcribe button
+        this.transcribeAudioBtn.disabled = false;
+        
+        this.hideAudioStatus();
+    }
+
+    async handleAudioTranscription() {
+        if (!this.selectedFile) {
+            this.showAudioStatus('Por favor, selecione um arquivo de áudio.', 'error');
+            return;
+        }
+
+        const language = document.getElementById('audioLanguage').value;
+        const outputFormat = this.outputFormat.value;
+
+        try {
+            this.setAudioLoading(true);
+            this.showAudioStatus('Enviando arquivo...', 'info');
+            this.showAudioProgress();
+
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+            formData.append('language', language);
+            formData.append('output_format', outputFormat);
+
+            const response = await fetch(`${API_BASE_URL}/transcribe-audio/download`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Erro na requisição');
+            }
+
+            this.showAudioStatus('Transcrição concluída! Baixando arquivo...', 'success');
+
+            // Get filename from response headers
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `transcription.${outputFormat}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Download file
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            link.download = filename;
+            link.href = downloadUrl;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+
+            this.showAudioStatus(`Transcrição baixada como ${filename}!`, 'success');
+            setTimeout(() => this.hideAudioStatus(), 5000);
+
+        } catch (error) {
+            console.error('Erro:', error);
+            this.showAudioStatus(`Erro: ${error.message}`, 'error');
+        } finally {
+            this.setAudioLoading(false);
+            this.hideAudioProgress();
         }
     }
 }

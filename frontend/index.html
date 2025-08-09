@@ -81,6 +81,71 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Audio Upload Section -->
+            <div class="section-divider">
+                <span>🎵 Ou envie um arquivo de áudio</span>
+            </div>
+
+            <div class="form-container">
+                <form id="audioTranscriptionForm">
+                    <div class="input-group">
+                        <label>Arquivo de Áudio:</label>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <span class="file-upload-icon">🎵</span>
+                            <div class="file-upload-text">Clique aqui ou arraste um arquivo de áudio</div>
+                            <div class="file-upload-hint">Formatos suportados: MP3, WAV, M4A, OGG, WEBM, FLAC (máx. 100MB)</div>
+                            <input type="file" id="audioFile" class="hidden-file-input" accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm,.flac">
+                        </div>
+                        <div id="fileInfo" class="file-info" style="display: none;">
+                            <div class="file-info-item">
+                                <span>Arquivo:</span>
+                                <span id="fileName"></span>
+                            </div>
+                            <div class="file-info-item">
+                                <span>Tamanho:</span>
+                                <span id="fileSize"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="audioLanguage">Idioma (opcional):</label>
+                        <select id="audioLanguage" name="audioLanguage">
+                            <option value="auto">Detecção automática</option>
+                            <option value="pt" selected>Português</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="outputFormat">Formato de Saída:</label>
+                        <select id="outputFormat" name="outputFormat">
+                            <option value="txt" selected>📄 Texto Simples (arquivo .txt)</option>
+                            <option value="srt">🎬 Legendas SRT (arquivo .srt com timestamps)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="transcribeAudioBtn" class="btn-primary" disabled>
+                        <span class="btn-text">🎤 Baixar Transcrição</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span>
+                            Processando...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="status-container">
+                <div id="audioStatusMessage" class="status-message" style="display: none;"></div>
+                <div id="audioProgressBar" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
         </main>
 
         <footer>
