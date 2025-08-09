@@ -339,8 +339,14 @@ class AudioService:
                 return result.stdout.strip(), language, None
                 
         except subprocess.CalledProcessError as e:
-            logger.error(f"❌ whisper.cpp falhou: {e.stderr}")
-            raise Exception(f"whisper.cpp error: {e.stderr}")
+            error_msg = e.stderr or str(e)
+            # Check for GLIBC compatibility issues
+            if "GLIBC" in error_msg:
+                logger.error(f"❌ whisper.cpp falhou: Incompatibilidade GLIBC")
+                raise Exception(f"whisper.cpp error: {error_msg}")
+            else:
+                logger.error(f"❌ whisper.cpp falhou: {error_msg}")
+                raise Exception(f"whisper.cpp error: {error_msg}")
         except subprocess.TimeoutExpired:
             raise Exception("whisper.cpp timeout - arquivo muito longo")
     

@@ -13,19 +13,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Build whisper.cpp with correct GLIBC
-RUN git clone https://github.com/ggerganov/whisper.cpp.git /tmp/whisper.cpp && \
-    cd /tmp/whisper.cpp && \
-    git checkout v1.7.6 && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
-    cmake --build . --config Release && \
-    mkdir -p /app/tools/whisper_cpp && \
-    cp bin/main /app/tools/whisper_cpp/ && \
-    find . -name "*.so*" -exec cp {} /app/tools/whisper_cpp/ \; && \
-    cd /tmp && \
-    wget -O /app/tools/whisper_cpp/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin && \
-    rm -rf /tmp/whisper.cpp
+# Note: whisper.cpp binaries already exist in tools/whisper_cpp/
+# We'll use the existing binaries but need to handle GLIBC compatibility
 
 # Set work directory
 WORKDIR /app
@@ -42,7 +31,7 @@ FROM python:3.12
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV ENV=production
-ENV LD_LIBRARY_PATH="/app/tools/whisper_cpp:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="/app/tools/whisper_cpp"
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -60,10 +49,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy compiled whisper.cpp from builder stage
-COPY --from=builder /app/tools/whisper_cpp /app/tools/whisper_cpp
-
-# Copy application code
+# Copy application code (whisper.cpp binaries included)
 COPY . .
 
 # Create logs directory and set permissions
@@ -73,6 +59,10 @@ RUN mkdir -p /app/logs && chown -R appuser:appuser /app
 RUN mkdir -p /home/appuser/.cache && \
     chown -R appuser:appuser /home/appuser && \
     chmod -R 755 /home/appuser
+
+# Set executable permissions for whisper.cpp and configure LD_LIBRARY_PATH
+RUN chmod +x /app/tools/whisper_cpp/main && \
+    echo 'export LD_LIBRARY_PATH="/app/tools/whisper_cpp:$LD_LIBRARY_PATH"' >> /home/appuser/.bashrc
 
 # Switch to non-root user
 USER appuser
