@@ -21,7 +21,7 @@ RUN git clone https://github.com/ggerganov/whisper.cpp.git /tmp/whisper.cpp && \
     cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
     cmake --build . --config Release && \
     mkdir -p /app/tools/whisper_cpp && \
-    cp main /app/tools/whisper_cpp/ && \
+    cp bin/main /app/tools/whisper_cpp/ && \
     cp *.so* /app/tools/whisper_cpp/ && \
     cd /tmp && \
     wget -O /app/tools/whisper_cpp/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin && \
