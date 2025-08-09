@@ -1,52 +1,170 @@
 # Transkiptor
 
-🎬 **Sistema completo de transcrição e download de vídeos do YouTube**
+🎬 **Sistema completo de transcrição para YouTube, áudios e vídeos**
 
-API para transcrição de áudio e download de vídeos do YouTube usando yt-dlp, whisper.cpp e OpenAI Whisper.
+API avançada para transcrição de conteúdo multimídia usando **yt-dlp**, **whisper.cpp**, **FFmpeg** e **OpenAI Whisper**.
 
 ## ✨ Funcionalidades
 
-### 🎤 **Transcrição de Áudio**
-- Transcrição usando **whisper.cpp (C++)** como primeira opção
-- Fallback para **OpenAI Whisper CLI** e **Python library**
-- Suporte a detecção automática de idioma
-- Transcrição em português por padrão
+### 🎤 **Transcrição de YouTube**
+- Transcrição direta de vídeos do YouTube via URL
+- Download e extração automática de áudio
+- Suporte a diversos formatos e qualidades
 
-### 📺 **Download de Vídeos**  
-- Download de vídeos em **alta qualidade (1080p)**
-- Formato MP4 otimizado
-- Nome de arquivo automático baseado no título
+### 🎵 **Transcrição de Arquivos de Áudio**
+- Upload de arquivos: MP3, WAV, M4A, OGG, WEBM, FLAC, AAC
+- Limite de 100MB por arquivo
+- Processamento otimizado com conversão automática
+
+### 📹 **Transcrição de Arquivos de Vídeo**
+- Upload de arquivos: MP4, AVI, MOV, MKV, WEBM, FLV, WMV, M4V, 3GP, OGV
+- Limite de 5GB por arquivo
+- Extração automática de áudio com FFmpeg
+- Processamento de vídeos de alta qualidade
 
 ### 🛠️ **Recursos Técnicos**
-- API REST com FastAPI
-- Interface web moderna
-- Docker e Docker Compose prontos para produção
-- FFmpeg local integrado
-- Limpeza automática de arquivos temporários
+- **Hierarquia de transcrição inteligente:** whisper.cpp → OpenAI Whisper Python
+- **Múltiplos formatos de saída:** Texto simples (.txt) ou Legendas (.srt)
+- **Detecção automática de idioma** ou seleção manual
+- **Interface web moderna** com drag & drop
+- **API REST completa** com FastAPI
+- **Docker pronto para produção**
 
-## 🏗️ Estrutura do Projeto
+## 🏗️ Arquitetura
 
 ```
 transkiptor/
-├── 📄 README.md                    # Documentação
+├── 📄 README.md                    # Documentação completa
 ├── 🐳 docker-compose.yml           # Desenvolvimento
 ├── 🚀 docker-compose.prod.yml     # Produção
-├── 🗄️  backend/                     # API Backend
-│   ├── main.py                     # FastAPI application
-│   ├── Dockerfile                  # Container desenvolvimento
-│   ├── Dockerfile.prod             # Container produção
+├── 🗄️  backend/                     # API Backend (FastAPI)
+│   ├── main.py                     # Aplicação principal
 │   ├── requirements.txt            # Dependências Python
-│   ├── models/                     # Schemas Pydantic
+│   ├── models/
+│   │   └── schemas.py              # Modelos Pydantic
 │   ├── routes/                     # Endpoints da API
+│   │   ├── youtube_transcription.py # YouTube transcription
+│   │   ├── audio_transcription.py   # Audio upload transcription
+│   │   ├── video_transcription.py   # Video upload transcription
+│   │   └── youtube_download.py      # YouTube video download
 │   ├── services/                   # Lógica de negócio
-│   └── 🛠️  tools/                   # Binários (FFmpeg + whisper.cpp)
+│   │   ├── youtube_service.py        # YouTube processing
+│   │   ├── youtube_download_service.py # YouTube download processing
+│   │   ├── audio_service.py          # Audio processing
+│   │   ├── video_service.py          # Video processing
+│   │   └── whisper_python_service.py # Whisper integration
+│   └── 🛠️  tools/                   # Binários otimizados
+│       ├── ffmpeg/                 # FFmpeg local
+│       └── whisper_cpp/            # whisper.cpp C++
 └── 🌐 frontend/                     # Interface Web
     ├── index.html                  # Interface principal
-    ├── script.js                   # Lógica JavaScript
-    ├── styles.css                  # Estilos CSS
-    ├── Dockerfile                  # Container nginx
-    └── nginx.conf                  # Configuração nginx
+    ├── script.js                   # Funcionalidades interativas
+    ├── styles.css                  # Design responsivo
+    └── server.py                   # Servidor de desenvolvimento
 ```
+
+## 📡 APIs Disponíveis
+
+### 🎬 YouTube Transcription
+
+#### **POST** `/api/v1/transcribe-youtube`
+Transcreve áudio de vídeo do YouTube
+
+**Request:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "language": "auto"  // opcional: "pt", "en", "es", "fr", "de", "it"
+}
+```
+
+**Response:**
+```json
+{
+  "transcription": "Texto transcrito completo do áudio...",
+  "duration": 180.5,
+  "language": "pt",
+  "success": true
+}
+```
+
+#### **POST** `/api/v1/download-youtube`
+Baixa vídeo do YouTube em alta qualidade
+
+**Request:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
+}
+```
+
+**Response:** Arquivo de vídeo (.mp4) como download
+
+### 🎵 Audio Transcription
+
+#### **POST** `/api/v1/transcribe-audio`
+Transcreve arquivo de áudio enviado
+
+**Request:** `multipart/form-data`
+- `file`: Arquivo de áudio (max 100MB)
+- `language`: Idioma opcional (padrão: "auto")
+- `output_format`: "txt" ou "srt" (padrão: "txt")
+
+**Response:**
+```json
+{
+  "transcription": "Texto transcrito ou formato SRT...",
+  "duration": 120.3,
+  "language": "pt",
+  "output_format": "txt",
+  "filename": "arquivo.mp3",
+  "success": true
+}
+```
+
+#### **POST** `/api/v1/transcribe-audio/download`
+Transcreve áudio e retorna arquivo para download
+
+**Request:** `multipart/form-data` (mesmos parâmetros acima)
+
+**Response:** Arquivo .txt ou .srt como download
+
+### 📹 Video Transcription
+
+#### **POST** `/api/v1/transcribe-video`
+Transcreve áudio extraído de arquivo de vídeo
+
+**Request:** `multipart/form-data`
+- `file`: Arquivo de vídeo (max 5GB)
+- `language`: Idioma opcional (padrão: "auto")
+- `output_format`: "txt" ou "srt" (padrão: "txt")
+
+**Response:**
+```json
+{
+  "transcription": "Texto transcrito do áudio do vídeo...",
+  "duration": 300.7,
+  "language": "en",
+  "output_format": "srt",
+  "filename": "video.mp4",
+  "success": true
+}
+```
+
+#### **POST** `/api/v1/transcribe-video/download`
+Transcreve vídeo e retorna arquivo para download
+
+**Request:** `multipart/form-data` (mesmos parâmetros acima)
+
+**Response:** Arquivo .txt ou .srt como download
+
+### 🔍 Health & Status
+
+#### **GET** `/`
+Informações gerais da API
+
+#### **GET** `/api/v1/health` (disponível em cada serviço)
+Status de saúde dos serviços
 
 ## 🚀 Execução com Docker (Recomendado)
 
@@ -57,219 +175,279 @@ git clone <repository-url>
 cd transkiptor
 
 # Iniciar com Docker Compose
-./start-docker.sh
+docker-compose up --build
+
+# Em background
+docker-compose up -d
 ```
 
 ### **Produção**
 ```bash
-# Iniciar em modo produção (daemon)
-./start-docker-prod.sh
+# Iniciar em produção
+docker-compose -f docker-compose.prod.yml up -d
 
-# Ver logs
+# Monitorar logs
 docker-compose -f docker-compose.prod.yml logs -f
 
-# Parar containers
+# Parar serviços
 docker-compose -f docker-compose.prod.yml down
 ```
 
 ### **Acessos:**
-- 🌐 **Frontend:** http://localhost
+- 🌐 **Frontend:** http://localhost:3000
 - 🚀 **Backend API:** http://localhost:8000  
-- 📖 **Documentação:** http://localhost:8000/docs
+- 📖 **Documentação Swagger:** http://localhost:8000/docs
+- 🔍 **Redoc:** http://localhost:8000/redoc
 
-## 🐳 Comandos Docker Úteis
+## 🌐 Interface Web Completa
 
+### 🎬 Transcrição do YouTube
+- Campo para URL do YouTube
+- Seleção de idioma
+- Botões para download de vídeo e transcrição
+- Visualização de resultados em tempo real
+
+### 🎵 Upload de Áudio
+- **Drag & Drop** ou clique para selecionar
+- Formatos: MP3, WAV, M4A, OGG, WEBM, FLAC, AAC
+- Limite: 100MB
+- Opções: Texto simples ou legendas SRT
+- Download automático da transcrição
+
+### 📹 Upload de Vídeo
+- **Drag & Drop** ou clique para selecionar
+- Formatos: MP4, AVI, MOV, MKV, WEBM, FLV, WMV, M4V, 3GP, OGV
+- Limite: 5GB
+- Extração automática de áudio
+- Opções: Texto simples ou legendas SRT
+
+### ✨ Recursos da Interface
+- Design responsivo e moderno
+- Indicadores visuais de progresso
+- Validação de arquivos em tempo real
+- Feedback instantâneo de erros
+- Preview de informações do arquivo
+
+## 🎯 Sistema de Transcrição Inteligente
+
+### **Hierarquia de Processamento:**
+1. **🥇 whisper.cpp (C++)** - Alta performance, processamento local
+2. **🥈 OpenAI Whisper Python** - Fallback robusto
+
+### **Idiomas Suportados:**
+- 🇵🇹 Português (padrão)
+- 🇺🇸 English
+- 🇪🇸 Español
+- 🇫🇷 Français
+- 🇩🇪 Deutsch
+- 🇮🇹 Italiano
+- 🌍 Detecção automática
+
+### **Formatos de Saída:**
+- **TXT:** Texto simples limpo
+- **SRT:** Legendas com timestamps precisos
+
+## 📋 Exemplos de Uso
+
+### cURL - YouTube
 ```bash
-# Build e start
-docker-compose up --build
-
-# Background/daemon mode
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Parar containers
-docker-compose down
-
-# Remover volumes
-docker-compose down -v
-
-# Produção
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## 🛠️ Execução Manual (Sem Docker)
-
-### **Pré-requisitos**
-- Python 3.12+
-- Docker e Docker Compose
-
-### **Instalação**
-```bash
-# 1. Instalar dependências do sistema
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
-
-# 2. Clonar repositório
-git clone <repository-url>
-cd transkiptor
-
-# 3. Executar
-./start-docker.sh
-```
-
-## 📡 Endpoints da API
-
-### **POST** `/api/v1/transcribe`
-Transcreve áudio de vídeo do YouTube
-
-**Request:**
-```json
-{
-  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
-  "language": "pt"  // opcional, padrão: "auto"
-}
-```
-
-**Response:**
-```json
-{
-  "transcription": "Texto transcrito do áudio...",
-  "duration": 120.5,
-  "language": "pt",
-  "success": true
-}
-```
-
-### **POST** `/api/v1/download`
-Baixa vídeo do YouTube em alta qualidade
-
-**Request:**
-```json
-{
-  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
-}
-```
-
-**Response:** Arquivo de vídeo (.mp4)
-
-### **GET** `/`
-Status da API e informações
-
-## 🌐 Interface Web
-
-A interface web oferece:
-- ✅ Campo para URL do YouTube
-- ✅ Seleção de idioma (português padrão)
-- ✅ Botão **"📺 Baixar Vídeo"** (1080p)
-- ✅ Botão **"Baixar Transcrição"** 
-- ✅ Visualização do resultado
-- ✅ Download de arquivos .txt
-- ✅ Cópia para clipboard
-
-## 🎯 Hierarquia de Transcrição
-
-1. **🥇 whisper.cpp** (C++ - alta performance)
-2. **🥈 OpenAI Whisper CLI** (fallback)  
-3. **🥉 OpenAI Whisper Python** (último recurso)
-
-## ⚙️ Configuração
-
-### **Variáveis de Ambiente** (`.env`)
-```bash
-# Aplicação
-ENV=development
-DEBUG=true
-API_HOST=0.0.0.0
-API_PORT=8000
-
-# Produção
-WORKERS=4
-LOG_LEVEL=INFO
-```
-
-### **Qualidade de Vídeo**
-- Prioriza **1080p** quando disponível
-- Fallback automático para resoluções menores
-- Formato MP4 otimizado
-
-## 🔧 Solução de Problemas
-
-### **Containers não iniciam**
-```bash
-# Verificar Docker
-docker --version
-docker-compose --version
-
-# Logs detalhados
-docker-compose logs backend
-docker-compose logs frontend
-```
-
-### **Erro de permissões**
-```bash
-# Dar permissões aos scripts
-chmod +x start-docker.sh start-docker-prod.sh
-```
-
-### **Problemas de download**
-- Verificar se a URL do YouTube é válida
-- Alguns vídeos podem ter restrições geográficas
-- Vídeos privados não são suportados
-
-## 🚀 Deploy em Produção
-
-1. **Configurar ambiente:**
-```bash
-cp .env.example .env
-# Editar configurações de produção
-```
-
-2. **Iniciar em produção:**
-```bash
-./start-docker-prod.sh
-```
-
-3. **Configurar nginx/proxy reverso** (opcional)
-
-4. **Monitoramento:**
-```bash
-docker-compose -f docker-compose.prod.yml logs -f
-```
-
-## 📋 Exemplo de Uso (cURL)
-
-```bash
-# Transcrição
-curl -X POST "http://localhost:8000/api/v1/transcribe" \
+# Transcrição de YouTube
+curl -X POST "http://localhost:8000/api/v1/transcribe-youtube" \
      -H "Content-Type: application/json" \
      -d '{
        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-       "language": "pt"
+       "language": "en"
      }'
 
 # Download de vídeo
-curl -X POST "http://localhost:8000/api/v1/download" \
+curl -X POST "http://localhost:8000/api/v1/download-youtube" \
      -H "Content-Type: application/json" \
      -d '{"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}' \
      --output video.mp4
 ```
 
-## 🛡️ Segurança
+### cURL - Upload de Áudio
+```bash
+# Transcrição de arquivo de áudio
+curl -X POST "http://localhost:8000/api/v1/transcribe-audio/download" \
+     -F "file=@audio.mp3" \
+     -F "language=pt" \
+     -F "output_format=srt" \
+     --output transcricao.srt
+```
 
-- Containers executam com usuário não-root
-- Arquivos temporários são limpos automaticamente
-- Rate limiting pode ser adicionado se necessário
-- CORS configurado para desenvolvimento
+### cURL - Upload de Vídeo
+```bash
+# Transcrição de arquivo de vídeo
+curl -X POST "http://localhost:8000/api/v1/transcribe-video/download" \
+     -F "file=@video.mp4" \
+     -F "language=auto" \
+     -F "output_format=txt" \
+     --output transcricao.txt
+```
 
-## 📈 Performance
+### Python
+```python
+import requests
 
+# YouTube Transcription
+response = requests.post(
+    "http://localhost:8000/api/v1/transcribe-youtube",
+    json={
+        "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+        "language": "pt"
+    }
+)
+result = response.json()
+print(result["transcription"])
+
+# Audio Upload
+with open("audio.mp3", "rb") as f:
+    files = {"file": f}
+    data = {"language": "en", "output_format": "srt"}
+    response = requests.post(
+        "http://localhost:8000/api/v1/transcribe-audio",
+        files=files,
+        data=data
+    )
+    result = response.json()
+    print(result["transcription"])
+```
+
+## 🔧 Configuração e Deploy
+
+### **Variáveis de Ambiente**
+```bash
+# .env
+ENV=production
+DEBUG=false
+API_HOST=0.0.0.0
+API_PORT=8000
+FRONTEND_PORT=3000
+WORKERS=4
+LOG_LEVEL=INFO
+```
+
+### **Requisitos de Sistema**
+- **Docker & Docker Compose**
+- **4GB RAM** mínimo para processamento de vídeos
+- **10GB espaço livre** para arquivos temporários
+- **FFmpeg** (incluído no container)
+
+## 🛡️ Segurança e Limits
+
+### **Limites de Upload**
+- **Áudio:** 100MB
+- **Vídeo:** 5GB
+- **Timeout:** 10 minutos por transcrição
+
+### **Validações**
+- Verificação de formato de arquivo
+- Sanitização de nomes de arquivo
+- Limpeza automática de arquivos temporários
+- Rate limiting configurável
+
+### **Segurança**
+- Containers não-root
+- CORS configurado
+- Validação de entrada com Pydantic
+- Logs de auditoria
+
+## 🔧 Solução de Problemas
+
+### **Container Issues**
+```bash
+# Verificar status
+docker-compose ps
+
+# Logs detalhados
+docker-compose logs backend
+docker-compose logs frontend
+
+# Restart de serviços
+docker-compose restart
+```
+
+### **Problemas de Upload**
+- Verificar tamanhos dos arquivos
+- Formatos suportados
+- Espaço em disco suficiente
+
+### **Erros de Transcrição**
+- Qualidade do áudio
+- Idioma correto selecionado
+- Duração do arquivo
+
+## 📈 Performance e Monitoramento
+
+### **Otimizações**
 - **Produção:** 4 workers uvicorn
-- **Cache:** Nginx para arquivos estáticos
+- **Cache:** Nginx para assets estáticos
 - **Compressão:** Gzip habilitado
 - **Health checks:** Monitoramento automático
 
+### **Métricas**
+- Tempo de processamento
+- Taxa de sucesso
+- Uso de recursos
+- Logs estruturados
+
+## 🚀 Deploy em Produção
+
+### **1. Preparação**
+```bash
+# Clone e configuração
+git clone <repository-url>
+cd transkiptor
+cp .env.example .env
+# Editar variáveis de produção
+```
+
+### **2. Deploy**
+```bash
+# Subir em produção
+docker-compose -f docker-compose.prod.yml up -d
+
+# Verificar saúde
+curl http://localhost:8000/
+curl http://localhost:3000/
+```
+
+### **3. Monitoramento**
+```bash
+# Logs em tempo real
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Status dos containers
+docker-compose -f docker-compose.prod.yml ps
+
+# Métricas de uso
+docker stats
+```
+
 ---
 
-**Desenvolvido com ❤️ usando FastAPI, Docker, whisper.cpp e yt-dlp**
+## 📝 Changelog
+
+### v2.0.0 (Atual)
+- ✅ **Nova API de transcrição de vídeos**
+- ✅ **Upload de arquivos até 5GB**
+- ✅ **Interface drag & drop completa**
+- ✅ **Suporte a formato SRT com timestamps**
+- ✅ **Extração de áudio com FFmpeg**
+
+### v1.0.0
+- ✅ Transcrição de YouTube
+- ✅ Upload de áudios
+- ✅ Interface web básica
+- ✅ API REST com FastAPI
+
+---
+
+**Desenvolvido com ❤️ usando FastAPI, Docker, whisper.cpp, FFmpeg e yt-dlp**
+
+🔗 **Links úteis:**
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [Docker](https://docs.docker.com/)

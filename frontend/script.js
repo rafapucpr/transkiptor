@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = '/api/v1';
 
 class TranskiptorUI {
     constructor() {
@@ -28,7 +28,21 @@ class TranskiptorUI {
         this.audioStatusMessage = document.getElementById('audioStatusMessage');
         this.audioProgressBar = document.getElementById('audioProgressBar');
 
+        // Video upload elements
+        this.videoForm = document.getElementById('videoTranscriptionForm');
+        this.videoUploadArea = document.getElementById('videoUploadArea');
+        this.videoFile = document.getElementById('videoFile');
+        this.videoFileInfo = document.getElementById('videoFileInfo');
+        this.videoFileName = document.getElementById('videoFileName');
+        this.videoFileSize = document.getElementById('videoFileSize');
+        this.transcribeVideoBtn = document.getElementById('transcribeVideoBtn');
+        this.videoOutputFormat = document.getElementById('videoOutputFormat');
+        this.videoStatusMessage = document.getElementById('videoStatusMessage');
+        this.videoProgressBar = document.getElementById('videoProgressBar');
+
         this.selectedFile = null;
+        this.selectedVideoFile = null;
+
 
         this.initEventListeners();
     }
@@ -83,6 +97,40 @@ class TranskiptorUI {
         this.audioFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        // Video upload events
+        this.videoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleVideoTranscription();
+        });
+
+        this.videoUploadArea.addEventListener('click', () => {
+            this.videoFile.click();
+        });
+
+        this.videoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this.videoUploadArea.classList.add('dragover');
+        });
+
+        this.videoUploadArea.addEventListener('dragleave', () => {
+            this.videoUploadArea.classList.remove('dragover');
+        });
+
+        this.videoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.videoUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleVideoFileSelection(files[0]);
+            }
+        });
+
+        this.videoFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleVideoFileSelection(e.target.files[0]);
             }
         });
     }
@@ -186,7 +234,7 @@ class TranskiptorUI {
             this.showStatus('Iniciando download do áudio...', 'info');
             this.showProgress();
 
-            const response = await fetch(`${API_BASE_URL}/transcribe`, {
+            const response = await fetch(`${API_BASE_URL}/transcribe-youtube`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -281,7 +329,7 @@ class TranskiptorUI {
             this.showStatus('Iniciando download do vídeo...', 'info');
             this.showProgress();
 
-            const response = await fetch(`${API_BASE_URL}/download`, {
+            const response = await fetch(`${API_BASE_URL}/download-youtube`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -488,6 +536,157 @@ class TranskiptorUI {
         } finally {
             this.setAudioLoading(false);
             this.hideAudioProgress();
+        }
+    }
+
+    // Video upload methods
+    showVideoStatus(message, type = 'info') {
+        this.videoStatusMessage.textContent = message;
+        this.videoStatusMessage.className = `status-message ${type}`;
+        this.videoStatusMessage.style.display = 'block';
+    }
+
+    hideVideoStatus() {
+        this.videoStatusMessage.style.display = 'none';
+    }
+
+    showVideoProgress() {
+        this.videoProgressBar.style.display = 'block';
+    }
+
+    hideVideoProgress() {
+        this.videoProgressBar.style.display = 'none';
+    }
+
+    setVideoLoading2(loading) {
+        const btnText = this.transcribeVideoBtn.querySelector('.btn-text');
+        const btnLoading = this.transcribeVideoBtn.querySelector('.btn-loading');
+        
+        if (loading) {
+            this.transcribeVideoBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'flex';
+        } else {
+            this.transcribeVideoBtn.disabled = this.selectedVideoFile ? false : true;
+            btnText.style.display = 'block';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    validateVideoFile(file) {
+        const allowedTypes = [
+            'video/mp4', 'video/avi', 'video/mov', 'video/quicktime',
+            'video/x-msvideo', 'video/mkv', 'video/webm', 'video/x-flv',
+            'video/x-ms-wmv', 'video/3gpp', 'video/ogg'
+        ];
+        
+        const allowedExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.m4v', '.3gp', '.ogv'];
+        const fileExtension = file.name.toLowerCase().substr(file.name.lastIndexOf('.'));
+        
+        const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
+        
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+            return { valid: false, error: 'Formato de arquivo não suportado' };
+        }
+        
+        if (file.size > maxSize) {
+            return { valid: false, error: 'Arquivo muito grande (máximo 5GB)' };
+        }
+        
+        return { valid: true };
+    }
+
+    handleVideoFileSelection(file) {
+        const validation = this.validateVideoFile(file);
+        
+        if (!validation.valid) {
+            this.showVideoStatus(validation.error, 'error');
+            return;
+        }
+        
+        this.selectedVideoFile = file;
+        
+        // Update UI
+        this.videoUploadArea.classList.add('file-selected');
+        this.videoUploadArea.querySelector('.file-upload-icon').textContent = '✓';
+        this.videoUploadArea.querySelector('.file-upload-text').textContent = 'Vídeo selecionado';
+        this.videoUploadArea.querySelector('.file-upload-hint').textContent = 'Clique novamente para selecionar outro arquivo';
+        
+        // Show file info
+        this.videoFileName.textContent = file.name;
+        this.videoFileSize.textContent = this.formatFileSize(file.size);
+        this.videoFileInfo.style.display = 'block';
+        
+        // Enable transcribe button
+        this.transcribeVideoBtn.disabled = false;
+        
+        this.hideVideoStatus();
+    }
+
+    async handleVideoTranscription() {
+        if (!this.selectedVideoFile) {
+            this.showVideoStatus('Por favor, selecione um arquivo de vídeo.', 'error');
+            return;
+        }
+
+        const language = document.getElementById('videoLanguage').value;
+        const outputFormat = this.videoOutputFormat.value;
+
+        try {
+            this.setVideoLoading2(true);
+            this.showVideoStatus('Enviando arquivo de vídeo...', 'info');
+            this.showVideoProgress();
+
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', this.selectedVideoFile);
+            formData.append('language', language);
+            formData.append('output_format', outputFormat);
+
+            const response = await fetch(`${API_BASE_URL}/transcribe-video/download`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Erro na requisição');
+            }
+
+            this.showVideoStatus('Transcrição concluída! Baixando arquivo...', 'success');
+
+            // Get filename from response headers
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `transcription.${outputFormat}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Download file
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            link.download = filename;
+            link.href = downloadUrl;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+
+            this.showVideoStatus(`Transcrição do vídeo baixada como ${filename}!`, 'success');
+            setTimeout(() => this.hideVideoStatus(), 5000);
+
+        } catch (error) {
+            console.error('Erro:', error);
+            this.showVideoStatus(`Erro: ${error.message}`, 'error');
+        } finally {
+            this.setVideoLoading2(false);
+            this.hideVideoProgress();
         }
     }
 }

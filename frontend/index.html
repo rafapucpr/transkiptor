@@ -146,6 +146,71 @@
                     <div class="progress-fill"></div>
                 </div>
             </div>
+
+            <!-- Video Upload Section -->
+            <div class="section-divider">
+                <span>📹 Ou envie um arquivo de vídeo</span>
+            </div>
+
+            <div class="form-container">
+                <form id="videoTranscriptionForm">
+                    <div class="input-group">
+                        <label>Arquivo de Vídeo:</label>
+                        <div class="file-upload-area" id="videoUploadArea">
+                            <span class="file-upload-icon">📹</span>
+                            <div class="file-upload-text">Clique aqui ou arraste um arquivo de vídeo</div>
+                            <div class="file-upload-hint">Formatos suportados: MP4, AVI, MOV, MKV, WEBM (máx. 5GB)</div>
+                            <input type="file" id="videoFile" class="hidden-file-input" accept="video/*,.mp4,.avi,.mov,.mkv,.webm,.flv,.wmv,.m4v,.3gp,.ogv">
+                        </div>
+                        <div id="videoFileInfo" class="file-info" style="display: none;">
+                            <div class="file-info-item">
+                                <span>Arquivo:</span>
+                                <span id="videoFileName"></span>
+                            </div>
+                            <div class="file-info-item">
+                                <span>Tamanho:</span>
+                                <span id="videoFileSize"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="videoLanguage">Idioma (opcional):</label>
+                        <select id="videoLanguage" name="videoLanguage">
+                            <option value="auto">Detecção automática</option>
+                            <option value="pt" selected>Português</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="videoOutputFormat">Formato de Saída:</label>
+                        <select id="videoOutputFormat" name="videoOutputFormat">
+                            <option value="txt" selected>📄 Texto Simples (arquivo .txt)</option>
+                            <option value="srt">🎬 Legendas SRT (arquivo .srt com timestamps)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="transcribeVideoBtn" class="btn-primary" disabled>
+                        <span class="btn-text">🎤 Baixar Transcrição</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span>
+                            Processando...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="status-container">
+                <div id="videoStatusMessage" class="status-message" style="display: none;"></div>
+                <div id="videoProgressBar" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
         </main>
 
         <footer>

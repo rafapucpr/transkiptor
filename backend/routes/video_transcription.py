@@ -1,49 +1,50 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from fastapi.responses import Response
 from models.schemas import AudioTranscriptionResponse, ErrorResponse
-from services.audio_service import AudioService
+from services.video_service import VideoService
 from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-def get_audio_service():
-    return AudioService()
+def get_video_service():
+    return VideoService()
 
 
-@router.post("/transcribe-audio", 
+@router.post("/transcribe-video", 
     response_model=AudioTranscriptionResponse,
-    summary="Transcribe Audio File",
-    description="Transcribe uploaded audio file using whisper.cpp or OpenAI Whisper",
+    summary="Transcribe Video File",
+    description="Extract audio from video file and transcribe it using whisper.cpp or OpenAI Whisper",
     response_description="Transcription result with metadata",
-    tags=["Audio Transcription"]
+    tags=["Video Transcription"]
 )
-async def transcribe_audio_file(
-    file: UploadFile = File(..., description="Audio file to transcribe (max 100MB)"),
+async def transcribe_video_file(
+    file: UploadFile = File(..., description="Video file to transcribe (max 5GB)"),
     language: Optional[str] = Form("auto", description="Language code: 'auto', 'pt', 'en', 'es', 'fr', 'de', 'it'"),
     output_format: Optional[str] = Form("txt", description="Output format: 'txt' for plain text or 'srt' for subtitles with timestamps"),
-    audio_service: AudioService = Depends(get_audio_service)
+    video_service: VideoService = Depends(get_video_service)
 ):
     """
-    **Transcribe Audio File**
+    **Transcribe Video File**
     
-    Upload and transcribe audio files to text or SRT subtitles using advanced AI models.
+    Extracts audio from uploaded video file and transcribes it to text or SRT subtitles.
     
-    **Supported Audio Formats:**
-    - WAV, MP3, M4A, OGG, WEBM, FLAC, AAC
-    - Also supports some video formats for audio extraction
+    **Supported Video Formats:**
+    - MP4, AVI, MOV, MKV, WEBM, FLV, WMV, M4V, 3GP, OGV
     
-    **Transcription Engine:**
-    1. **Primary**: whisper.cpp (C++ implementation, high performance)
-    2. **Fallback**: OpenAI Whisper Python (if whisper.cpp fails)
+    **Process:**
+    1. Upload video file (up to 5GB)
+    2. Extract audio using FFmpeg
+    3. Transcribe audio using whisper.cpp or OpenAI Whisper
+    4. Return transcription with metadata
     
     **Parameters:**
-    - **file**: Audio file to process (required, max 100MB)
+    - **file**: Video file to process (required)
     - **language**: Target language for transcription
         - "auto": Automatic language detection (default)
         - "pt": Portuguese
-        - "en": English
+        - "en": English  
         - "es": Spanish
         - "fr": French
         - "de": German
@@ -54,29 +55,23 @@ async def transcribe_audio_file(
     
     **Returns:**
     - **transcription**: Transcribed text or SRT content
-    - **duration**: Audio duration in seconds  
+    - **duration**: Video duration in seconds
     - **language**: Detected or specified language
     - **output_format**: Format used for output
     - **filename**: Original filename
     - **success**: Operation status
     
-    **Features:**
-    - Automatic audio format conversion (to 16kHz mono WAV)
-    - High-quality transcription with timestamp support
-    - Multi-language support with auto-detection
-    - Efficient processing with cleanup of temporary files
-    
     **Limitations:**
-    - Maximum file size: 100MB
-    - Processing timeout: 5 minutes
+    - Maximum file size: 5GB
     - Supported formats only
+    - Processing timeout: 10 minutes
     """
     # Validate file
     if not file.filename:
         raise HTTPException(status_code=400, detail="Nenhum arquivo foi enviado")
     
     # Check file extension
-    allowed_extensions = ['.wav', '.mp3', '.m4a', '.ogg', '.webm', '.flac', '.aac', '.mp4', '.mov', '.avi']
+    allowed_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.m4v', '.3gp', '.ogv']
     file_ext = file.filename.lower()
     if not any(file_ext.endswith(ext) for ext in allowed_extensions):
         raise HTTPException(
@@ -88,19 +83,19 @@ async def transcribe_audio_file(
     if output_format not in ["txt", "srt"]:
         raise HTTPException(status_code=400, detail="Formato de saída deve ser 'txt' ou 'srt'")
     
-    # Check file size (limit to 100MB)
-    max_size = 100 * 1024 * 1024  # 100MB in bytes
+    # Check file size (limit to 5GB for videos)
+    max_size = 5 * 1024 * 1024 * 1024  # 5GB in bytes
     file.file.seek(0, 2)  # Seek to end
     file_size = file.file.tell()
     file.file.seek(0)  # Reset to beginning
     
     if file_size > max_size:
-        raise HTTPException(status_code=413, detail="Arquivo muito grande. Limite de 100MB")
+        raise HTTPException(status_code=413, detail="Arquivo muito grande. Limite de 5GB")
     
-    logger.info(f"📤 Recebido arquivo: {file.filename} ({file_size / 1024 / 1024:.1f}MB)")
+    logger.info(f"📹 Recebido vídeo: {file.filename} ({file_size / 1024 / 1024:.1f}MB)")
     
     try:
-        result = await audio_service.process_audio_file(
+        result = await video_service.process_video_file(
             file=file,
             language=language or "auto",
             output_format=output_format or "txt"
@@ -112,67 +107,59 @@ async def transcribe_audio_file(
             raise HTTPException(status_code=400, detail=result["error"])
             
     except Exception as e:
-        logger.error(f"❌ Erro na transcrição: {str(e)}")
+        logger.error(f"❌ Erro na transcrição do vídeo: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/transcribe-audio/download",
-    summary="Transcribe Audio and Download Result", 
-    description="Transcribe uploaded audio file and return transcription as downloadable file",
+@router.post("/transcribe-video/download",
+    summary="Transcribe Video and Download Result",
+    description="Extract audio from video file, transcribe it, and return transcription as downloadable file",
     response_description="Downloadable transcription file (.txt or .srt)",
-    tags=["Audio Transcription"]
+    tags=["Video Transcription"]
 )
-async def download_transcription(
-    file: UploadFile = File(..., description="Audio file to transcribe (max 100MB)"),
+async def download_video_transcription(
+    file: UploadFile = File(..., description="Video file to transcribe (max 5GB)"),
     language: Optional[str] = Form("auto", description="Language code: 'auto', 'pt', 'en', 'es', 'fr', 'de', 'it'"),
     output_format: Optional[str] = Form("txt", description="Output format: 'txt' for plain text or 'srt' for subtitles with timestamps"),
-    audio_service: AudioService = Depends(get_audio_service)
+    video_service: VideoService = Depends(get_video_service)
 ):
     """
-    **Transcribe Audio File and Download**
+    **Transcribe Video File and Download**
     
-    Process audio file and return transcription as downloadable file.
+    Processes video file and returns transcription as downloadable file.
     
-    **Ideal for:**
-    - Batch processing workflows
-    - Integration with other tools
-    - Direct file downloads without API parsing
+    **Features:**
+    - Direct file download (no JSON response)
+    - Automatic filename generation
+    - Proper content-type headers
+    - Original filename preservation
     
     **Process:**
-    1. Upload audio file
-    2. Convert to optimal format (16kHz mono WAV)
+    1. Upload video file
+    2. Extract audio using FFmpeg
     3. Transcribe using whisper.cpp or OpenAI Whisper
-    4. Format as plain text or SRT subtitles
+    4. Format as TXT or SRT
     5. Return as downloadable file
     
     **Parameters:**
-    Same as `/transcribe-audio` endpoint
+    Same as `/transcribe-video` endpoint
     
     **Returns:**
     Downloadable file with transcription:
     - **Content-Type**: `text/plain` (TXT) or `application/x-subrip` (SRT)
     - **Content-Disposition**: `attachment; filename="original_name_transcription.{format}"`
-    - **Filename**: Preserves original name with `_transcription` suffix
     
     **Example Usage:**
     ```bash
-    # Download TXT transcription
-    curl -X POST "http://localhost:8000/api/v1/transcribe-audio/download" \\
-         -F "file=@audio.mp3" \\
+    curl -X POST "http://localhost:8000/api/v1/transcribe-video/download" \\
+         -F "file=@video.mp4" \\
          -F "language=pt" \\
-         -F "output_format=txt" \\
-         --output transcricao.txt
-    
-    # Download SRT subtitles
-    curl -X POST "http://localhost:8000/api/v1/transcribe-audio/download" \\
-         -F "file=@podcast.wav" \\
-         -F "language=en" \\
          -F "output_format=srt" \\
-         --output podcast_transcription.srt
+         --output transcricao.srt
     ```
     """
     # Use the same validation and processing as the regular endpoint
-    result = await transcribe_audio_file(file, language, output_format, audio_service)
+    result = await transcribe_video_file(file, language, output_format, video_service)
     
     # Create filename
     original_name = file.filename or "transcription"
@@ -192,4 +179,4 @@ async def download_transcription(
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "audio_transcription"}
+    return {"status": "healthy", "service": "video_transcription"}
