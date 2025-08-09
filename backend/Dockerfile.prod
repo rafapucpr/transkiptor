@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM python:3.12-slim as builder
+FROM python:3.12 as builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -21,13 +21,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Production stage
-FROM python:3.12-slim
+# Production stage  
+FROM python:3.12
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV ENV=production
+ENV LD_LIBRARY_PATH="/app/tools/whisper_cpp:$LD_LIBRARY_PATH"
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -35,6 +36,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
