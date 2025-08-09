@@ -118,12 +118,17 @@ class TranskiptorUI {
 
     async handleTranscription() {
         const formData = new FormData(this.form);
-        const url = formData.get('videoUrl');
+        let url = formData.get('videoUrl');
         const language = formData.get('language');
 
         if (!url) {
             this.showStatus('Por favor, insira uma URL válida do YouTube.', 'error');
             return;
+        }
+
+        // Auto-fix URL format: add https:// if protocol is missing
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
         }
 
         try {
@@ -209,11 +214,16 @@ class TranskiptorUI {
 
     async handleVideoDownload() {
         const formData = new FormData(this.form);
-        const url = formData.get('videoUrl');
+        let url = formData.get('videoUrl');
 
         if (!url) {
             this.showStatus('Por favor, insira uma URL válida do YouTube.', 'error');
             return;
+        }
+
+        // Auto-fix URL format: add https:// if protocol is missing
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
         }
 
         try {

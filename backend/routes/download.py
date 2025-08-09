@@ -1,7 +1,8 @@
 import os
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
+from fastapi.exceptions import RequestValidationError
 from models.schemas import VideoDownloadRequest, ErrorResponse
 from services.video_download_service import VideoDownloadService
 
