@@ -13,6 +13,7 @@ services:
       - /tmp/transkiptor:/tmp/transkiptor  # For temporary files
       - transkiptor_logs:/app/logs  # Persistent logs
       - transkiptor_data:/app/data  # For future persistent data
+      - /home/appuser:/home/appuser  # For user data
     environment:
       - PYTHONPATH=/app
       - ENV=production
