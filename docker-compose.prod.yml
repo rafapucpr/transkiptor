@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # Backend API service (Production)
@@ -13,7 +12,7 @@ services:
       - /tmp/transkiptor:/tmp/transkiptor  # For temporary files
       - transkiptor_logs:/app/logs  # Persistent logs
       - transkiptor_data:/app/data  # For future persistent data
-      - /home/appuser:/home/appuser  # For user data
+      - appuser_home:/home/appuser  # User data with proper permissions
     environment:
       - PYTHONPATH=/app
       - ENV=production
@@ -59,6 +58,7 @@ services:
 volumes:
   transkiptor_data:
   transkiptor_logs:
+  appuser_home:
 
 networks:
   transkiptor-network:
