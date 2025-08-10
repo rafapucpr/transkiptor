@@ -62,7 +62,14 @@ class AudioService:
         
         # Check for whisper.cpp (real C++ implementation) first
         whisper_cpp_dir = os.path.join(backend_root, 'tools', 'whisper_cpp')
-        self.whisper_cpp_path = os.path.join(whisper_cpp_dir, 'main')
+        # Try whisper-cli first, fallback to main for compatibility
+        whisper_cli_path = os.path.join(whisper_cpp_dir, 'whisper-cli')
+        main_path = os.path.join(whisper_cpp_dir, 'main')
+        
+        if os.path.exists(whisper_cli_path) and os.access(whisper_cli_path, os.X_OK):
+            self.whisper_cpp_path = whisper_cli_path
+        else:
+            self.whisper_cpp_path = main_path
         
         if os.path.exists(self.whisper_cpp_path) and os.access(self.whisper_cpp_path, os.X_OK):
             logger.info(f"✅ whisper.cpp encontrado: {self.whisper_cpp_path}")

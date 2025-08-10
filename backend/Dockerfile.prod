@@ -13,9 +13,6 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Note: whisper.cpp binaries already exist in tools/whisper_cpp/
-# We'll use the existing binaries but need to handle GLIBC compatibility
-
 # Set work directory
 WORKDIR /app
 
@@ -61,7 +58,7 @@ RUN mkdir -p /home/appuser/.cache && \
     chmod -R 755 /home/appuser
 
 # Set executable permissions for whisper.cpp and configure LD_LIBRARY_PATH
-RUN chmod +x /app/tools/whisper_cpp/main && \
+RUN chmod +x /app/tools/whisper_cpp/main /app/tools/whisper_cpp/whisper-cli && \
     echo 'export LD_LIBRARY_PATH="/app/tools/whisper_cpp:$LD_LIBRARY_PATH"' >> /home/appuser/.bashrc
 
 # Switch to non-root user
