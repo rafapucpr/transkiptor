@@ -36,8 +36,8 @@ sniffio==1.3.1
 starlette==0.27.0
 sympy==1.14.0
 tiktoken==0.10.0
-# torch sem CUDA para produção CPU-only
-torch==2.8.0
+# torch instalado separadamente no Dockerfile para economia de espaço
+# torch==2.8.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 tqdm==4.67.1
 # triton removido (dependência CUDA)
 typing_extensions==4.14.1
